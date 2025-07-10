@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>3B Parsel Görselleştirme – Kuş Bakışı</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    html, body, #cesiumContainer {
+      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+
+  <script>
+    // Cesium başlat
+   const viewer = new Cesium.Viewer('cesiumContainer', {
+  terrainProvider: Cesium.Terrain.fromWorldTerrain(),
+  shouldAnimate: true,
+  timeline: false,
+  animation: false
+});
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzMGU5Mzg0Zi03NDI1LTQ1YzEtOGU2YS01ZDY4M2IzZDZkODIiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxNDM3MjV9.sr6FAXgWKs99VkW0YmYFW9if4qVzQ8AEAt5-z416Scw';
+
+    // GeoJSON verisi doğrudan JS içinde
+    const geojson = {
+      "type": "FeatureCollection",
+      "features": [{
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[27.28348, 37.78565], [27.28237, 37.78602], [27.2822, 37.78603],
+                           [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
+                           [27.28348, 37.78565]]]
+        },
+        "properties": {
+          "ParselNo": "1",
+          "Alan": "14.572,03",
+          "Mevkii": "Nacaklı",
+          "Nitelik": "Arsa",
+          "Ada": "196",
+          "Il": "Aydın",
+          "Ilce": "Kuşadası",
+          "Pafta": "M18-B-21-B-4-B",
+          "Mahalle": "Soğucak"
+        }
+      }]
+    };
+
+    // GeoJSON yükle
+    const dataSourcePromise = Cesium.GeoJsonDataSource.load(geojson, {
+      clampToGround: false,
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.YELLOW.withAlpha(0.4),
+      strokeWidth: 2
+    });
+
+    dataSourcePromise.then(function(dataSource) {
+      viewer.dataSources.add(dataSource);
+      viewer.flyTo(dataSource);
+
+      // Kuş bakışı döner kamera
+      const entities = dataSource.entities.values;
+      const boundingSphere = Cesium.BoundingSphere.fromPoints(
+        entities.flatMap(entity => {
+          const positions = entity.polygon?.hierarchy?.getValue(Cesium.JulianDate.now()).positions;
+          return positions || [];
+        })
+      );
+
+      const center = boundingSphere.center;
+      const radius = 150;
+
+      // Kamera animasyonu
+      Cesium.Camera.prototype.flyCircle = function(center, options = {}) {
+        let angle = 0;
+        const pitch = Cesium.Math.toRadians(options.pitch || -25);
+        const duration = options.duration || 30;
+        const loop = options.loop !== false;
+
+        const start = Cesium.JulianDate.now();
+        const self = this;
+
+        function update() {
+          const now = Cesium.JulianDate.now();
+          const elapsed = Cesium.JulianDate.secondsDifference(now, start);
+          if (!loop && elapsed > duration) return;
+
+          angle = (elapsed / duration) * Cesium.Math.TWO_PI;
+          const x = center.x + radius * Math.cos(angle);
+          const y = center.y + radius * Math.sin(angle);
+          const z = center.z + 60;
+
+          self.setView({
+            destination: new Cesium.Cartesian3(x, y, z),
+            orientation: {
+              heading: angle + Cesium.Math.PI_OVER_TWO,
+              pitch: pitch,
+              roll: 0
+            }
+          });
+
+          requestAnimationFrame(update);
+        }
+
+        update();
+      };
+
+      viewer.scene.camera.flyCircle(center, {
+        radius: radius,
+        duration: 20,
+        pitch: -30
+      });
+    });
+  </script>
+</body>
+</html>
