@@ -1,71 +1,53 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<title>Sürükle Bırak Test</title>
-<style>
-  html, body {
-    margin:0; padding:0;
-    width:100%; height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#222;
-    color:#eee;
-    font-size:24px;
-    user-select:none;
-  }
-  #dropZone {
-    border: 4px dashed #55ff55;
-    border-radius: 12px;
-    width: 80vw;
-    height: 50vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: background-color 0.3s;
-  }
-  #dropZone.dragging {
-    background-color: rgba(85, 255, 85, 0.3);
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Basit Sürükle Bırak Testi</title>
+  <style>
+    #dropZone {
+      width: 400px;
+      height: 200px;
+      border: 3px dashed red;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin: 50px auto;
+      color: red;
+    }
+    #dropZone.dragover {
+      background-color: #ffcccc;
+    }
+  </style>
 </head>
 <body>
 
-<div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
+<div id="dropZone">Dosyayı buraya sürükleyin</div>
 
 <script>
   const dropZone = document.getElementById('dropZone');
 
-  dropZone.addEventListener('dragover', e => {
+  dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.classList.add('dragging');
+    dropZone.classList.add('dragover');
   });
 
-  dropZone.addEventListener('dragleave', e => {
+  dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('dragging');
+    dropZone.classList.remove('dragover');
   });
 
-  dropZone.addEventListener('drop', e => {
+  dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('dragging');
+    dropZone.classList.remove('dragover');
 
-    const file = e.dataTransfer.files[0];
-    if (!file) return alert("Dosya bulunamadı!");
-
-    if (!file.name.toLowerCase().endsWith('.geojson')) {
-      return alert("Lütfen sadece .geojson dosyası bırakın.");
+    const files = e.dataTransfer.files;
+    console.log('Dosyalar:', files);
+    if (files.length === 0) {
+      alert("Dosya bulunamadı!");
+      return;
     }
-
-    const reader = new FileReader();
-    reader.onload = event => {
-      console.log("Dosya içeriği:", event.target.result);
-      alert("Dosya başarıyla okundu! Konsolu kontrol edin.");
-    };
-    reader.onerror = () => alert("Dosya okunamadı.");
-    reader.readAsText(file);
+    alert(`${files.length} dosya algılandı. Dosya adı: ${files[0].name}`);
   });
 </script>
 
