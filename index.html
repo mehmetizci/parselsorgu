@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Stabil 3B Parsel Dönüşü</title>
+  <title>Stabil Parsel Dönüş</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -59,7 +59,6 @@
         const entity = dataSource.entities.values[0];
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
 
-        // Parselin merkezini al
         const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
         const cartographicCenter = Cesium.Cartographic.fromCartesian(boundingSphere.center);
         const lon = Cesium.Math.toDegrees(cartographicCenter.longitude);
@@ -67,31 +66,37 @@
         const height = 50;
 
         const center = Cesium.Cartesian3.fromDegrees(lon, lat, height);
-        const transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
-
-        viewer.camera.lookAtTransform(transform);
-
         let angle = 0;
         const radius = 300;
         const pitch = Cesium.Math.toRadians(-30);
 
-        function rotateCamera() {
+        function animateCamera() {
           angle += 0.002;
           if (angle > Cesium.Math.TWO_PI) angle -= Cesium.Math.TWO_PI;
 
-          const x = radius * Math.cos(angle);
-          const y = radius * Math.sin(angle);
-          const z = 100;
+          const offsetX = radius * Math.cos(angle);
+          const offsetY = radius * Math.sin(angle);
+          const offsetZ = 100;
 
-          viewer.camera.lookAt(
-            new Cesium.Cartesian3(x, y, z),
-            new Cesium.HeadingPitchRange(angle + Cesium.Math.PI_OVER_TWO, pitch, radius)
+          const position = new Cesium.Cartesian3(
+            center.x + offsetX,
+            center.y + offsetY,
+            center.z + offsetZ
           );
 
-          requestAnimationFrame(rotateCamera);
+          viewer.camera.setView({
+            destination: position,
+            orientation: {
+              heading: Cesium.Math.PI + angle,
+              pitch: pitch,
+              roll: 0
+            }
+          });
+
+          requestAnimationFrame(animateCamera);
         }
 
-        rotateCamera();
+        animateCamera();
       });
     });
   </script>
