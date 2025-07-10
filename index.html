@@ -10,7 +10,6 @@
       margin: 0; padding: 0;
       width: 100%; height: 100%;
     }
-
     #dropZone {
       position: absolute;
       top: 0; left: 0;
@@ -24,7 +23,6 @@
       z-index: 1000;
       pointer-events: none;
     }
-
     body.dragging #dropZone {
       display: flex;
       pointer-events: auto;
@@ -36,7 +34,7 @@
   <div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
 
   <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJI...'; // (kısaltıldı)
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: new Cesium.EllipsoidTerrainProvider(),
@@ -45,8 +43,11 @@
       animation: false
     });
 
+    const dropZone = document.getElementById("dropZone");
+
     function handleGeoJSONData(geojson) {
       viewer.dataSources.removeAll();
+      viewer.entities.removeAll();
 
       Cesium.GeoJsonDataSource.load(geojson, {
         clampToGround: false,
@@ -55,15 +56,17 @@
         strokeWidth: 4
       }).then(dataSource => {
         viewer.dataSources.add(dataSource);
-        viewer.flyTo(dataSource);
 
         const entity = dataSource.entities.values[0];
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
         const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-        // Pin ekle
+        // Pin ve etiket konumu
         const cartographic = Cesium.Cartographic.fromCartesian(center);
-        const pinPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 50);
+        const pinPosition = Cesium.Cartesian3.fromRadians(
+          cartographic.longitude, cartographic.latitude, 50
+        );
+
         viewer.entities.add({
           position: pinPosition,
           billboard: {
@@ -74,7 +77,6 @@
           }
         });
 
-        // Etiket
         const alan = entity.properties?.Alan?.getValue() || "Alan Bilinmiyor";
         viewer.entities.add({
           position: pinPosition,
@@ -91,11 +93,24 @@
             backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
           }
         });
+
+        // Kamera döndürme
+        let heading = 0;
+        const pitch = Cesium.Math.toRadians(-35);
+        const range = 800;
+        const speed = 0.005;
+
+        function rotateCamera() {
+          if (heading >= Cesium.Math.TWO_PI) return;
+          heading += speed;
+          viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+          requestAnimationFrame(rotateCamera);
+        }
+
+        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
+        setTimeout(() => rotateCamera(), 1000);
       });
     }
-
-    // Sürükle bırak
-    const dropZone = document.getElementById("dropZone");
 
     document.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -114,12 +129,16 @@
       if (file && file.name.endsWith(".geojson")) {
         const reader = new FileReader();
         reader.onload = function (event) {
-          const geojson = JSON.parse(event.target.result);
-          handleGeoJSONData(geojson);
+          try {
+            const geojson = JSON.parse(event.target.result);
+            handleGeoJSONData(geojson);
+          } catch (e) {
+            alert("Geçersiz GeoJSON dosyası!");
+          }
         };
         reader.readAsText(file);
       } else {
-        alert("Lütfen geçerli bir .geojson dosyası bırakın.");
+        alert("Lütfen bir .geojson dosyası bırakın.");
       }
     });
   </script>
