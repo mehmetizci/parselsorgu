@@ -73,8 +73,8 @@ viewer.entities.add({
         position: pinPosition,
         billboard: {
           image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-          width: 48,
-          height: 48,
+          width: 72,
+          height: 72,
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM
         }
       });
@@ -87,7 +87,7 @@ viewer.entities.add({
       pinPosition                                                                 // pin yüksekliği
     ],
     width: 2,
-    material: Cesium.Color.RED
+    material: Cesium.Color.WHITE
   }
 });
 
@@ -111,7 +111,7 @@ viewer.entities.add({
       // Kamera dönüşü
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
-      const range = 400;
+      const range = 800;
       const maxHeading = Cesium.Math.TWO_PI;
       const speed = 0.005;
 
