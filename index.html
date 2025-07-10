@@ -58,61 +58,55 @@
       strokeWidth: 2
     });
 
-    dataSourcePromise.then(function(dataSource) {
+dataSourcePromise.then(function (dataSource) {
   viewer.dataSources.add(dataSource);
-  viewer.flyTo(dataSource);
 
-  const entities = dataSource.entities.values;
-  const polygonPositions = entities[0].polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+  const entity = dataSource.entities.values[0];
+  const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
 
-  // Pozisyonların ortalama merkezi
-  let total = new Cesium.Cartesian3(0, 0, 0);
-  for (const pos of polygonPositions) {
-    total = Cesium.Cartesian3.add(total, pos, total);
+  // Dünya koordinatlarını coğrafi (lat/lon) koordinatlara çevir
+  const cartographicPositions = positions.map(pos =>
+    Cesium.Cartographic.fromCartesian(pos)
+  );
+
+  // Ortalama enlem-boylam hesapla
+  let sumLat = 0, sumLon = 0;
+  for (const cart of cartographicPositions) {
+    sumLat += Cesium.Math.toDegrees(cart.latitude);
+    sumLon += Cesium.Math.toDegrees(cart.longitude);
   }
-  const center = Cesium.Cartesian3.divideByScalar(total, polygonPositions.length, new Cesium.Cartesian3());
 
-  const radius = 150;
+  const avgLat = sumLat / cartographicPositions.length;
+  const avgLon = sumLon / cartographicPositions.length;
 
-  // Kamera animasyonu
-  Cesium.Camera.prototype.flyCircle = function(center, options = {}) {
-    let angle = 0;
-    const pitch = Cesium.Math.toRadians(options.pitch || -25);
-    const duration = options.duration || 30;
-    const loop = options.loop !== false;
+  // Bu ortalama nokta üzerinden merkez belirle
+  const center = Cesium.Cartesian3.fromDegrees(avgLon, avgLat, 50); // 50 metre yükseklik
 
-    const start = Cesium.JulianDate.now();
-    const self = this;
+  const radius = 150; // Kamera yarıçapı
+  let angle = 0;
+  const pitch = Cesium.Math.toRadians(-25); // Hafif eğik bakış
 
-    function update() {
-      const now = Cesium.JulianDate.now();
-      const elapsed = Cesium.JulianDate.secondsDifference(now, start);
-      if (!loop && elapsed > duration) return;
+  function animateCamera() {
+    angle += 0.003; // Dönüş hızı
+    const x = center.x + radius * Math.cos(angle);
+    const y = center.y + radius * Math.sin(angle);
+    const z = center.z + 30;
 
-      angle = (elapsed / duration) * Cesium.Math.TWO_PI;
-      const x = center.x + radius * Math.cos(angle);
-      const y = center.y + radius * Math.sin(angle);
-      const z = center.z + 60;
+    viewer.camera.setView({
+      destination: new Cesium.Cartesian3(x, y, z),
+      orientation: {
+        heading: angle + Cesium.Math.PI_OVER_TWO,
+        pitch: pitch,
+        roll: 0
+      }
+    });
 
-      self.setView({
-        destination: new Cesium.Cartesian3(x, y, z),
-        orientation: {
-          heading: angle + Cesium.Math.PI_OVER_TWO,
-          pitch: pitch,
-          roll: 0
-        }
-      });
+    requestAnimationFrame(animateCamera);
+  }
 
-      requestAnimationFrame(update);
-    }
-
-    update();
-  };
-
-  viewer.scene.camera.flyCircle(center, {
-    radius: radius,
-    duration: 20,
-    pitch: -30
+  // Başlat
+  viewer.flyTo(entity).then(() => {
+    animateCamera();
   });
 });
   </script>
