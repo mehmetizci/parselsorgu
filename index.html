@@ -59,62 +59,62 @@
     });
 
     dataSourcePromise.then(function(dataSource) {
-      viewer.dataSources.add(dataSource);
-      viewer.flyTo(dataSource);
+  viewer.dataSources.add(dataSource);
+  viewer.flyTo(dataSource);
 
-      // Kuş bakışı döner kamera
-      const entities = dataSource.entities.values;
-      const boundingSphere = Cesium.BoundingSphere.fromPoints(
-        entities.flatMap(entity => {
-          const positions = entity.polygon?.hierarchy?.getValue(Cesium.JulianDate.now()).positions;
-          return positions || [];
-        })
-      );
+  const entities = dataSource.entities.values;
+  const polygonPositions = entities[0].polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
 
-      const center = boundingSphere.center;
-      const radius = 150;
+  // Pozisyonların ortalama merkezi
+  let total = new Cesium.Cartesian3(0, 0, 0);
+  for (const pos of polygonPositions) {
+    total = Cesium.Cartesian3.add(total, pos, total);
+  }
+  const center = Cesium.Cartesian3.divideByScalar(total, polygonPositions.length, new Cesium.Cartesian3());
 
-      // Kamera animasyonu
-      Cesium.Camera.prototype.flyCircle = function(center, options = {}) {
-        let angle = 0;
-        const pitch = Cesium.Math.toRadians(options.pitch || -25);
-        const duration = options.duration || 30;
-        const loop = options.loop !== false;
+  const radius = 150;
 
-        const start = Cesium.JulianDate.now();
-        const self = this;
+  // Kamera animasyonu
+  Cesium.Camera.prototype.flyCircle = function(center, options = {}) {
+    let angle = 0;
+    const pitch = Cesium.Math.toRadians(options.pitch || -25);
+    const duration = options.duration || 30;
+    const loop = options.loop !== false;
 
-        function update() {
-          const now = Cesium.JulianDate.now();
-          const elapsed = Cesium.JulianDate.secondsDifference(now, start);
-          if (!loop && elapsed > duration) return;
+    const start = Cesium.JulianDate.now();
+    const self = this;
 
-          angle = (elapsed / duration) * Cesium.Math.TWO_PI;
-          const x = center.x + radius * Math.cos(angle);
-          const y = center.y + radius * Math.sin(angle);
-          const z = center.z + 60;
+    function update() {
+      const now = Cesium.JulianDate.now();
+      const elapsed = Cesium.JulianDate.secondsDifference(now, start);
+      if (!loop && elapsed > duration) return;
 
-          self.setView({
-            destination: new Cesium.Cartesian3(x, y, z),
-            orientation: {
-              heading: angle + Cesium.Math.PI_OVER_TWO,
-              pitch: pitch,
-              roll: 0
-            }
-          });
+      angle = (elapsed / duration) * Cesium.Math.TWO_PI;
+      const x = center.x + radius * Math.cos(angle);
+      const y = center.y + radius * Math.sin(angle);
+      const z = center.z + 60;
 
-          requestAnimationFrame(update);
+      self.setView({
+        destination: new Cesium.Cartesian3(x, y, z),
+        orientation: {
+          heading: angle + Cesium.Math.PI_OVER_TWO,
+          pitch: pitch,
+          roll: 0
         }
-
-        update();
-      };
-
-      viewer.scene.camera.flyCircle(center, {
-        radius: radius,
-        duration: 20,
-        pitch: -30
       });
-    });
+
+      requestAnimationFrame(update);
+    }
+
+    update();
+  };
+
+  viewer.scene.camera.flyCircle(center, {
+    radius: radius,
+    duration: 20,
+    pitch: -30
+  });
+});
   </script>
 </body>
 </html>
