@@ -79,6 +79,18 @@ viewer.entities.add({
         }
       });
 
+// Pin ile zemin arasında çizgi (polyline)
+viewer.entities.add({
+  polyline: {
+    positions: [
+      Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0),   // zemin
+      pinPosition                                                                 // pin yüksekliği
+    ],
+    width: 2,
+    material: Cesium.Color.RED
+  }
+});
+
       // Etiket ve işaretçi
       viewer.entities.add({
         position: center,
