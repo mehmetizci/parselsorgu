@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
-<title>Parsel Üzerinde Dönen Kamera (Sürükle Bırak)</title>
+<title>Cesium Parsel Sürükle Bırak Demo</title>
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
 <style>
@@ -15,9 +15,9 @@
     position: absolute;
     top:0; left:0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     color: white;
-    font-size: 32px;
+    font-size: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -92,7 +92,7 @@
             backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
           }
         });
-      });
+      }).catch(() => alert("GeoJSON yüklenirken hata oluştu!"));
     }
 
     const dropZone = document.getElementById("dropZone");
@@ -107,6 +107,7 @@
     });
 
     window.addEventListener("dragleave", (e) => {
+      // Eğer fare sürüklenip dışarı çıktıysa dropZone gizlenir
       if(e.target === dropZone || e.target === document.body) {
         document.body.classList.remove("dragging");
       }
@@ -117,13 +118,13 @@
       document.body.classList.remove("dragging");
 
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".geojson")) {
+      if(file && file.name.endsWith(".geojson")) {
         const reader = new FileReader();
         reader.onload = function(event) {
           try {
             const geojson = JSON.parse(event.target.result);
             handleGeoJSONData(geojson);
-          } catch(err) {
+          } catch (error) {
             alert("Geçersiz GeoJSON dosyası.");
           }
         };
