@@ -53,7 +53,13 @@
       const entity = dataSource.entities.values[0];
       const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
       const center = Cesium.BoundingSphere.fromPoints(positions).center;
-
+viewer.entities.add({
+  polyline: {
+    positions: positions,
+    width: 5, // 🔴 Kenar kalınlığı burada!
+    material: Cesium.Color.RED
+  }
+});
       // Etiket ve işaretçi
       viewer.entities.add({
         position: center,
