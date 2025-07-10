@@ -54,7 +54,6 @@
       const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
       const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-      // Kenar çizgisi
       viewer.entities.add({
         polyline: {
           positions: positions,
@@ -63,7 +62,7 @@
         }
       });
 
-      // Pin konumu
+      // Pin
       const cartographic = Cesium.Cartographic.fromCartesian(center);
       const pinPosition = Cesium.Cartesian3.fromRadians(
         cartographic.longitude,
@@ -71,7 +70,6 @@
         50
       );
 
-      // Pin
       viewer.entities.add({
         position: pinPosition,
         billboard: {
@@ -113,15 +111,13 @@
       }
 
       viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
-
-      // 🕒 1 saniye sonra döndürmeye başla
       setTimeout(() => {
         rotateCamera();
       }, 1000);
 
-      // 🎥 Kayıt Ayarı
+      // 🎥 Video Kaydı
       const canvas = viewer.scene.canvas;
-      const stream = canvas.captureStream(30); // 30 FPS
+      const stream = canvas.captureStream(30);
       const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
       const chunks = [];
 
@@ -141,15 +137,14 @@
         URL.revokeObjectURL(url);
       };
 
-      // ⏳ 5 saniye sonra başla, 30 saniye kaydet
       setTimeout(() => {
         mediaRecorder.start();
         console.log("🎬 Kayıt başladı...");
         setTimeout(() => {
           mediaRecorder.stop();
           console.log("✅ Kayıt tamamlandı, video indiriliyor...");
-        }, 30000); // 30 saniye kayıt süresi
-      }, 5000); // 5 saniye gecikme
+        }, 30000);
+      }, 5000);
     });
   </script>
 </body>
