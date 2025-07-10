@@ -36,6 +36,33 @@
   <div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
 
   <script>
+// Sürükle bırak olayları
+document.addEventListener('dragover', e => {
+  e.preventDefault();
+  document.body.classList.add('dragging');
+});
+
+document.addEventListener('dragleave', e => {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+});
+
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith(".geojson")) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const geojson = JSON.parse(e.target.result);
+      handleGeoJSONData(geojson);
+    };
+    reader.readAsText(file);
+  } else {
+    alert("Lütfen geçerli bir .geojson dosyası bırakın.");
+  }
+});
+
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
