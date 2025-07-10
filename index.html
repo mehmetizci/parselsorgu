@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>3B Parsel Görselleştirme – Kuş Bakışı</title>
+  <title>3B Parsel Görselleştirme</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -13,19 +13,16 @@
 </head>
 <body>
   <div id="cesiumContainer"></div>
-
   <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
+    Cesium.Ion.defaultAccessToken = 'TOKENINIZI_BURAYA_YAPIŞTIRIN';
 
-    // Cesium başlat
-   const viewer = new Cesium.Viewer('cesiumContainer', {
-  terrainProvider: Cesium.Terrain.fromWorldTerrain(),
-  shouldAnimate: true,
-  timeline: false,
-  animation: false
-});
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.Terrain.fromWorldTerrain(),
+      shouldAnimate: true,
+      timeline: false,
+      animation: false
+    });
 
-    // GeoJSON verisi doğrudan JS içinde
     const geojson = {
       "type": "FeatureCollection",
       "features": [{
@@ -33,8 +30,8 @@
         "geometry": {
           "type": "Polygon",
           "coordinates": [[[27.28348, 37.78565], [27.28237, 37.78602], [27.2822, 37.78603],
-                           [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
-                           [27.28348, 37.78565]]]
+                          [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
+                          [27.28348, 37.78565]]]
         },
         "properties": {
           "ParselNo": "1",
@@ -50,65 +47,50 @@
       }]
     };
 
-    // GeoJSON yükle
-    const dataSourcePromise = Cesium.GeoJsonDataSource.load(geojson, {
+    Cesium.GeoJsonDataSource.load(geojson, {
       clampToGround: false,
       stroke: Cesium.Color.YELLOW,
-      fill: Cesium.Color.YELLOW.withAlpha(0.4),
+      fill: Cesium.Color.YELLOW.withAlpha(0.5),
       strokeWidth: 2
+    }).then(function (dataSource) {
+      viewer.dataSources.add(dataSource);
+
+      // Parselin merkezini boundingSphere ile bul
+      viewer.flyTo(dataSource).then(() => {
+        const entities = dataSource.entities.values;
+        const positions = entities.flatMap(entity => {
+          return entity.polygon?.hierarchy?.getValue(Cesium.JulianDate.now())?.positions || [];
+        });
+
+        const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
+        const center = boundingSphere.center;
+
+        const radius = 150;
+        const pitch = Cesium.Math.toRadians(-25);
+        let angle = 0;
+
+        function animateCamera() {
+          angle += 0.002;
+
+          const x = center.x + radius * Math.cos(angle);
+          const y = center.y + radius * Math.sin(angle);
+          const z = center.z + 50;
+
+          viewer.camera.setView({
+            destination: new Cesium.Cartesian3(x, y, z),
+            orientation: {
+              heading: angle + Cesium.Math.PI_OVER_TWO,
+              pitch: pitch,
+              roll: 0
+            }
+          });
+
+          requestAnimationFrame(animateCamera);
+        }
+
+        animateCamera();
+      });
     });
-
-dataSourcePromise.then(function (dataSource) {
-  viewer.dataSources.add(dataSource);
-
-  const entity = dataSource.entities.values[0];
-  const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-
-  // Dünya koordinatlarını coğrafi (lat/lon) koordinatlara çevir
-  const cartographicPositions = positions.map(pos =>
-    Cesium.Cartographic.fromCartesian(pos)
-  );
-
-  // Ortalama enlem-boylam hesapla
-  let sumLat = 0, sumLon = 0;
-  for (const cart of cartographicPositions) {
-    sumLat += Cesium.Math.toDegrees(cart.latitude);
-    sumLon += Cesium.Math.toDegrees(cart.longitude);
-  }
-
-  const avgLat = sumLat / cartographicPositions.length;
-  const avgLon = sumLon / cartographicPositions.length;
-
-  // Bu ortalama nokta üzerinden merkez belirle
-  const center = Cesium.Cartesian3.fromDegrees(avgLon, avgLat, 50); // 50 metre yükseklik
-
-  const radius = 150; // Kamera yarıçapı
-  let angle = 0;
-  const pitch = Cesium.Math.toRadians(-25); // Hafif eğik bakış
-
-  function animateCamera() {
-    angle += 0.003; // Dönüş hızı
-    const x = center.x + radius * Math.cos(angle);
-    const y = center.y + radius * Math.sin(angle);
-    const z = center.z + 30;
-
-    viewer.camera.setView({
-      destination: new Cesium.Cartesian3(x, y, z),
-      orientation: {
-        heading: angle + Cesium.Math.PI_OVER_TWO,
-        pitch: pitch,
-        roll: 0
-      }
-    });
-
-    requestAnimationFrame(animateCamera);
-  }
-
-  // Başlat
-  viewer.flyTo(entity).then(() => {
-    animateCamera();
-  });
-});
   </script>
 </body>
 </html>
