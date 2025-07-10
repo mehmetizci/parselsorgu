@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Stabil Parsel Dönüş</title>
+  <title>3B Parsel Kuşbakışı – Stabil Kamera</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -58,40 +58,23 @@
       viewer.flyTo(dataSource).then(() => {
         const entity = dataSource.entities.values[0];
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-
         const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
-        const cartographicCenter = Cesium.Cartographic.fromCartesian(boundingSphere.center);
-        const lon = Cesium.Math.toDegrees(cartographicCenter.longitude);
-        const lat = Cesium.Math.toDegrees(cartographicCenter.latitude);
-        const height = 50;
+        const center = boundingSphere.center;
 
-        const center = Cesium.Cartesian3.fromDegrees(lon, lat, height);
         let angle = 0;
-        const radius = 300;
-        const pitch = Cesium.Math.toRadians(-30);
+        const radius = 200; // parsel etrafında ne kadar uzaktan dönsün
+        const pitch = Cesium.Math.toRadians(-30); // bakış eğimi
 
         function animateCamera() {
-          angle += 0.002;
+          angle += 0.003;
           if (angle > Cesium.Math.TWO_PI) angle -= Cesium.Math.TWO_PI;
 
-          const offsetX = radius * Math.cos(angle);
-          const offsetY = radius * Math.sin(angle);
-          const offsetZ = 100;
+          const heading = angle;
 
-          const position = new Cesium.Cartesian3(
-            center.x + offsetX,
-            center.y + offsetY,
-            center.z + offsetZ
+          viewer.camera.lookAt(
+            center,
+            new Cesium.HeadingPitchRange(heading, pitch, radius)
           );
-
-          viewer.camera.setView({
-            destination: position,
-            orientation: {
-              heading: Cesium.Math.PI + angle,
-              pitch: pitch,
-              roll: 0
-            }
-          });
 
           requestAnimationFrame(animateCamera);
         }
