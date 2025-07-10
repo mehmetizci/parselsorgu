@@ -10,7 +10,6 @@
       margin: 0; padding: 0;
       width: 100%; height: 100%;
     }
-
   </style>
 </head>
 <body>
@@ -19,11 +18,11 @@
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
-  terrainProvider: new Cesium.EllipsoidTerrainProvider(), // 🌍 DÜZ ZEMİN
-  shouldAnimate: true,
-  timeline: false,
-  animation: false
-});
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(), // Düz zemin
+      shouldAnimate: true,
+      timeline: false,
+      animation: false
+    });
 
     const geojson = {
       "type": "FeatureCollection",
@@ -37,7 +36,8 @@
         },
         "properties": {
           "ParselNo": "1",
-          "Ada": "196"
+          "Ada": "196",
+          "Alan": "14.572,03"
         }
       }]
     };
@@ -53,15 +53,16 @@
       const entity = dataSource.entities.values[0];
       const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
       const center = Cesium.BoundingSphere.fromPoints(positions).center;
-viewer.entities.add({
-  polyline: {
-    positions: positions,
-    width: 5, // 🔴 Kenar kalınlığı burada!
-    material: Cesium.Color.YELLOW
-  }
-});
 
-// 📍 Konum pini (50 metre yukarıda)
+      viewer.entities.add({
+        polyline: {
+          positions: positions,
+          width: 5, // Kenar kalınlığı
+          material: Cesium.Color.YELLOW
+        }
+      });
+
+      // Pin konumu (50 metre yukarıda)
       const cartographic = Cesium.Cartographic.fromCartesian(center);
       const pinPosition = Cesium.Cartesian3.fromRadians(
         cartographic.longitude,
@@ -69,6 +70,7 @@ viewer.entities.add({
         50
       );
 
+      // Pin billboard
       viewer.entities.add({
         position: pinPosition,
         billboard: {
@@ -79,9 +81,24 @@ viewer.entities.add({
         }
       });
 
+      // Pin üstü alan etiketi
+      viewer.entities.add({
+        position: pinPosition,
+        label: {
+          text: entity.properties.Alan.getValue() + " m²",
+          font: "28pt sans-serif",
+          fillColor: Cesium.Color.YELLOW,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 3,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -70),
+          showBackground: true,
+          backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
+        }
+      });
 
-
-      // Etiket ve işaretçi
+      // Ada ve Parsel etiketi
       viewer.entities.add({
         position: center,
         point: {
