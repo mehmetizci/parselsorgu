@@ -15,6 +15,8 @@
   <div id="cesiumContainer"></div>
 
   <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzMGU5Mzg0Zi03NDI1LTQ1YzEtOGU2YS01ZDY4M2IzZDZkODIiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxNDM3MjV9.sr6FAXgWKs99VkW0YmYFW9if4qVzQ8AEAt5-z416Scw';
+
     // Cesium başlat
    const viewer = new Cesium.Viewer('cesiumContainer', {
   terrainProvider: Cesium.Terrain.fromWorldTerrain(),
@@ -22,7 +24,6 @@
   timeline: false,
   animation: false
 });
-Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzMGU5Mzg0Zi03NDI1LTQ1YzEtOGU2YS01ZDY4M2IzZDZkODIiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxNDM3MjV9.sr6FAXgWKs99VkW0YmYFW9if4qVzQ8AEAt5-z416Scw';
 
     // GeoJSON verisi doğrudan JS içinde
     const geojson = {
