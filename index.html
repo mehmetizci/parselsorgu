@@ -1,48 +1,44 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Parsel Üzerinde Dönen Kamera (Sürükle Bırak)</title>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-  <style>
-    html, body, #cesiumContainer {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    #dropZone {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      font-size: 32px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    body.dragging #dropZone {
-      display: flex;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Parsel Üzerinde Dönen Kamera (Sürükle Bırak)</title>
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
+<link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+<style>
+  html, body, #cesiumContainer {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+  #dropZone {
+    position: absolute;
+    top:0; left:0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  body.dragging #dropZone {
+    pointer-events: all;
+    opacity: 1;
+  }
+</style>
 </head>
 <body>
   <div id="cesiumContainer"></div>
   <div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
 
   <script>
-    // ✅ Cesium token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
-    // ✅ Viewer oluştur
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: new Cesium.EllipsoidTerrainProvider(),
       shouldAnimate: true,
@@ -99,37 +95,36 @@
       });
     }
 
-    // ✅ Drag and drop
     const dropZone = document.getElementById("dropZone");
 
-    window.addEventListener("dragenter", function (e) {
+    window.addEventListener("dragenter", (e) => {
       e.preventDefault();
       document.body.classList.add("dragging");
     });
 
-    window.addEventListener("dragover", function (e) {
+    window.addEventListener("dragover", (e) => {
       e.preventDefault();
     });
 
-    window.addEventListener("dragleave", function (e) {
-      if (e.target === dropZone || e.target === document.body) {
+    window.addEventListener("dragleave", (e) => {
+      if(e.target === dropZone || e.target === document.body) {
         document.body.classList.remove("dragging");
       }
     });
 
-    window.addEventListener("drop", function (e) {
+    window.addEventListener("drop", (e) => {
       e.preventDefault();
       document.body.classList.remove("dragging");
 
       const file = e.dataTransfer.files[0];
       if (file && file.name.endsWith(".geojson")) {
         const reader = new FileReader();
-        reader.onload = function (event) {
+        reader.onload = function(event) {
           try {
             const geojson = JSON.parse(event.target.result);
             handleGeoJSONData(geojson);
-          } catch (err) {
-            alert("Hatalı GeoJSON dosyası.");
+          } catch(err) {
+            alert("Geçersiz GeoJSON dosyası.");
           }
         };
         reader.readAsText(file);
