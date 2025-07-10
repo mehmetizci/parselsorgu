@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Parsel Üzerinde Dönen Kamera (Sürükle Bırak)</title>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js">
+document.addEventListener("dragover", e => {
+  e.preventDefault();
+  document.body.classList.add("dragging");
+});
+document.addEventListener("dragleave", e => {
+  e.preventDefault();
+  document.body.classList.remove("dragging");
+});
+
+</script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
