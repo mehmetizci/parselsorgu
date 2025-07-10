@@ -1,8 +1,8 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Parsel Üzerinde Dönen Kamera</title>
+  <title>Parsel Üzerinde Dönen Kamera (Video Kayıt)</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -18,7 +18,7 @@
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: new Cesium.EllipsoidTerrainProvider(), // Düz zemin
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
       shouldAnimate: true,
       timeline: false,
       animation: false
@@ -54,15 +54,16 @@
       const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
       const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
+      // Polyline kenarlık
       viewer.entities.add({
         polyline: {
           positions: positions,
-          width: 5, // Kenar kalınlığı
+          width: 5,
           material: Cesium.Color.YELLOW
         }
       });
 
-      // Pin konumu (50 metre yukarıda)
+      // Pin konumu (50m yukarıda)
       const cartographic = Cesium.Cartographic.fromCartesian(center);
       const pinPosition = Cesium.Cartesian3.fromRadians(
         cartographic.longitude,
@@ -70,7 +71,7 @@
         50
       );
 
-      // Pin billboard
+      // Pin
       viewer.entities.add({
         position: pinPosition,
         billboard: {
@@ -81,7 +82,7 @@
         }
       });
 
-      // Pin üstü alan etiketi
+      // Alan bilgisi
       viewer.entities.add({
         position: pinPosition,
         label: {
@@ -98,20 +99,14 @@
         }
       });
 
-      
-
       // Kamera dönüşü
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
       const range = 800;
-      const maxHeading = Cesium.Math.TWO_PI;
       const speed = 0.005;
 
       function rotateCamera() {
-        if (heading >= maxHeading) {
-          viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
-          return;
-        }
+        if (heading >= Cesium.Math.TWO_PI) return;
         heading += speed;
         viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
         requestAnimationFrame(rotateCamera);
@@ -121,6 +116,34 @@
       setTimeout(() => {
         rotateCamera();
       }, 1000);
+
+      // 🎥 VIDEO KAYDI
+      const canvas = viewer.scene.canvas;
+      const stream = canvas.captureStream(30); // 30 FPS
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = function (e) {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = function () {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "parsel_video.webm";
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      // ⏱️ 30 saniye kayıt
+      mediaRecorder.start();
+      setTimeout(() => {
+        mediaRecorder.stop();
+      }, 30000);
     });
   </script>
 </body>
