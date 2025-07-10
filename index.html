@@ -86,7 +86,7 @@
         position: pinPosition,
         label: {
           text: entity.properties.Alan.getValue() + " m²",
-          font: "28pt sans-serif",
+          font: "38pt sans-serif",
           fillColor: Cesium.Color.YELLOW,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           outlineColor: Cesium.Color.BLACK,
@@ -98,22 +98,7 @@
         }
       });
 
-      // Ada ve Parsel etiketi
-      viewer.entities.add({
-        position: center,
-        point: {
-          pixelSize: 10,
-          color: Cesium.Color.BLUE
-        },
-        label: {
-          text: "Ada: " + entity.properties.Ada.getValue() + "\nParsel: " + entity.properties.ParselNo.getValue(),
-          font: "25pt sans-serif",
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          outlineWidth: 2,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -20)
-        }
-      });
+      
 
       // Kamera dönüşü
       let heading = 0;
