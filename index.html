@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>3B Parsel Görselleştirme – Kuş Bakışı</title>
+  <title>3B Parsel Dönüş – Stabil Kamera</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -59,28 +59,30 @@
       viewer.flyTo(dataSource).then(() => {
         const entity = dataSource.entities.values[0];
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-        const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
-        const center = boundingSphere.center;
 
-        const radius = 300; // sabit uzaklık
-        const height = 150; // yukarıdan bakış
-        const pitch = Cesium.Math.toRadians(-45); // bakış açısı
+        const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
+        const cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+        const lon = Cesium.Math.toDegrees(cartographic.longitude);
+        const lat = Cesium.Math.toDegrees(cartographic.latitude);
+        const height = 150; // Sabit yükseklik
+
+        const center = Cesium.Cartesian3.fromDegrees(lon, lat, height);
+        const radius = 300;
+        const pitch = Cesium.Math.toRadians(-45);
         let angle = 0;
 
         function animateCamera() {
           angle += 0.002;
+          if (angle > Cesium.Math.TWO_PI) {
+            angle -= Cesium.Math.TWO_PI; // sonsuza gitmesin
+          }
 
-          const offsetX = radius * Math.cos(angle);
-          const offsetY = radius * Math.sin(angle);
-
-          const cameraPosition = new Cesium.Cartesian3(
-            center.x + offsetX,
-            center.y + offsetY,
-            center.z + height
-          );
+          const x = center.x + radius * Math.cos(angle);
+          const y = center.y + radius * Math.sin(angle);
+          const z = center.z;
 
           viewer.camera.setView({
-            destination: cameraPosition,
+            destination: new Cesium.Cartesian3(x, y, z),
             orientation: {
               heading: angle + Cesium.Math.PI_OVER_TWO,
               pitch: pitch,
