@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[15:42, 7/10/2025] mehmetizci.startkey: <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -20,9 +20,38 @@
       terrainProvider: Cesium.Terrain.fromWorldTerrain(),
       shouldAnimate: true,
       timeline: false,
+      animation…
+[15:46, 7/10/2025] mehmetizci.startkey: <!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Parsel Üzerinde Sabit Dönüş</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    html, body, #cesiumContainer {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    // Token
+    Cesium.Ion.defaultAccessToken = 'TOKENINIZI_BURAYA_YAPIŞTIRIN';
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.Terrain.fromWorldTerrain(),
+      shouldAnimate: true,
+      timeline: false,
       animation: false
     });
 
+    // GeoJSON
     const geojson = {
       "type": "FeatureCollection",
       "features": [{
@@ -47,40 +76,39 @@
       }]
     };
 
+    // Yükle
     Cesium.GeoJsonDataSource.load(geojson, {
       clampToGround: false,
       stroke: Cesium.Color.YELLOW,
-      fill: Cesium.Color.YELLOW.withAlpha(0.5),
+      fill: Cesium.Color.YELLOW.withAlpha(0.4),
       strokeWidth: 2
-    }).then(function(dataSource) {
+    }).then(dataSource => {
       viewer.dataSources.add(dataSource);
 
-      viewer.flyTo(dataSource).then(() => {
-        const entity = dataSource.entities.values[0];
-        const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-        const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
-        const center = boundingSphere.center;
+      const entity = dataSource.entities.values[0];
+      const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+      const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-        let angle = 0;
-        const radius = 200; // parsel etrafında ne kadar uzaktan dönsün
-        const pitch = Cesium.Math.toRadians(-30); // bakış eğimi
+      // Kamera başlat
+      let heading = 0;
+      const pitch = Cesium.Math.toRadians(-90);  // Aşağı doğru bak
+      const range = 300;                         // Yükseklik mesafesi
 
-        function animateCamera() {
-          angle += 0.003;
-          if (angle > Cesium.Math.TWO_PI) angle -= Cesium.Math.TWO_PI;
-
-          const heading = angle;
-
-          viewer.camera.lookAt(
-            center,
-            new Cesium.HeadingPitchRange(heading, pitch, radius)
-          );
-
-          requestAnimationFrame(animateCamera);
+      function animateCamera(frame) {
+        heading += 0.005; // dönüş hızı
+        if (heading > Cesium.Math.TWO_PI) {
+          cancelAnimationFrame(frame);
+          return;
         }
 
-        animateCamera();
-      });
+        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+        requestAnimationFrame(animateCamera);
+      }
+
+      viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+      setTimeout(() => {
+        requestAnimationFrame(animateCamera);
+      }, 1000); // 1 saniye bekleyip animasyona başla
     });
   </script>
 </body>
