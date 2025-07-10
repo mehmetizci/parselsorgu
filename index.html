@@ -81,7 +81,7 @@
           const y = center.y + radius * Math.sin(angle);
           const z = center.z;
 
-          viewer.camera.setView({
+          viewer.camera.lookAt({
             destination: new Cesium.Cartesian3(x, y, z),
             orientation: {
               heading: angle + Cesium.Math.PI_OVER_TWO,
