@@ -1,4 +1,4 @@
-ölüm<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -79,7 +79,7 @@ viewer.entities.add({
         },
         label: {
           text: "Ada: " + entity.properties.Ada.getValue() + "\nParsel: " + entity.properties.ParselNo.getValue(),
-          font: "20pt sans-serif",
+          font: "25pt sans-serif",
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           outlineWidth: 2,
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
@@ -90,7 +90,7 @@ viewer.entities.add({
       // Kamera dönüşü
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
-      const range = 500;
+      const range = 400;
       const maxHeading = Cesium.Math.TWO_PI;
       const speed = 0.005;
 
