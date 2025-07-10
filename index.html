@@ -7,14 +7,19 @@
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
-      margin: 0; padding: 0;
-      width: 100%; height: 100%;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
 
     #dropZone {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: rgba(0,0,0,0.6);
       color: white;
       font-size: 32px;
@@ -34,8 +39,10 @@
   <div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
 
   <script>
+    // ✅ Cesium token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
+    // ✅ Viewer oluştur
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: new Cesium.EllipsoidTerrainProvider(),
       shouldAnimate: true,
@@ -44,13 +51,14 @@
     });
 
     function handleGeoJSONData(geojson) {
+      viewer.entities.removeAll();
       viewer.dataSources.removeAll();
 
       Cesium.GeoJsonDataSource.load(geojson, {
         clampToGround: false,
         stroke: Cesium.Color.RED,
         fill: Cesium.Color.GREEN.withAlpha(0.3),
-        strokeWidth: 4
+        strokeWidth: 5
       }).then(dataSource => {
         viewer.dataSources.add(dataSource);
         viewer.flyTo(dataSource);
@@ -59,15 +67,9 @@
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
         const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-        // Pin konumu
         const cartographic = Cesium.Cartographic.fromCartesian(center);
-        const pinPosition = Cesium.Cartesian3.fromRadians(
-          cartographic.longitude,
-          cartographic.latitude,
-          50
-        );
+        const pinPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 50);
 
-        // Pin
         viewer.entities.add({
           position: pinPosition,
           billboard: {
@@ -78,7 +80,6 @@
           }
         });
 
-        // Etiket
         const alan = entity.properties?.Alan?.getValue() || "Alan Bilinmiyor";
         viewer.entities.add({
           position: pinPosition,
@@ -98,22 +99,28 @@
       });
     }
 
-    // 🔁 Sürükle-Bırak Etkinlikleri
+    // ✅ Drag and drop
     const dropZone = document.getElementById("dropZone");
 
-    document.addEventListener("dragover", (e) => {
+    window.addEventListener("dragenter", function (e) {
       e.preventDefault();
       document.body.classList.add("dragging");
     });
 
-    document.addEventListener("dragleave", (e) => {
+    window.addEventListener("dragover", function (e) {
       e.preventDefault();
-      document.body.classList.remove("dragging");
     });
 
-    document.addEventListener("drop", (e) => {
+    window.addEventListener("dragleave", function (e) {
+      if (e.target === dropZone || e.target === document.body) {
+        document.body.classList.remove("dragging");
+      }
+    });
+
+    window.addEventListener("drop", function (e) {
       e.preventDefault();
       document.body.classList.remove("dragging");
+
       const file = e.dataTransfer.files[0];
       if (file && file.name.endsWith(".geojson")) {
         const reader = new FileReader();
@@ -122,7 +129,7 @@
             const geojson = JSON.parse(event.target.result);
             handleGeoJSONData(geojson);
           } catch (err) {
-            alert("Dosya okunamadı. GeoJSON formatında olduğundan emin olun.");
+            alert("Hatalı GeoJSON dosyası.");
           }
         };
         reader.readAsText(file);
