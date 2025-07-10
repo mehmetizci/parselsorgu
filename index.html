@@ -1,27 +1,22 @@
-<body>
-  <div id="cesiumContainer"></div>
+const fileInput = document.getElementById('fileInput');
 
-  <input 
-    type="file" 
-    id="fileInput" 
-    accept=".geojson" 
-    style="
-      position: fixed;
-      top: 10px; 
-      left: 50%; 
-      transform: translateX(-50%);
-      z-index: 2000;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #0066cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    "
-  />
+fileInput.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-  <script>
-    // ... Buraya mevcut JS kodun gelecek ...
-  </script>
-</body>
+  if (!file.name.endsWith('.geojson')) {
+    alert('Lütfen geçerli bir .geojson dosyası seçin.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const geojson = JSON.parse(e.target.result);
+      handleGeoJSONData(geojson);
+    } catch {
+      alert('Dosya okunamadı veya geçerli bir GeoJSON değil.');
+    }
+  };
+  reader.readAsText(file);
+});
