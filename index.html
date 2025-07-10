@@ -60,6 +60,16 @@ viewer.entities.add({
     material: Cesium.Color.YELLOW
   }
 });
+
+viewer.entities.add({
+  position: center,
+  billboard: {
+    image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    width: 32,
+    height: 32,
+    verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+  }
+});
       // Etiket ve işaretçi
       viewer.entities.add({
         position: center,
