@@ -1,31 +1,8 @@
-[15:42, 7/10/2025] mehmetizci.startkey: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>3B Parsel Kuşbakışı – Stabil Kamera</title>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-  <style>
-    html, body, #cesiumContainer {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-    }
-  </style>
-</head>
-<body>
-  <div id="cesiumContainer"></div>
-  <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
-
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.Terrain.fromWorldTerrain(),
-      shouldAnimate: true,
-      timeline: false,
-      animation…
-[15:46, 7/10/2025] mehmetizci.startkey: <!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>Parsel Üzerinde Sabit Dönüş</title>
+  <title>3B Parsel – Kuşbakışı Dönüş (V2)</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -41,8 +18,7 @@
 <body>
   <div id="cesiumContainer"></div>
   <script>
-    // Token
-    Cesium.Ion.defaultAccessToken = 'TOKENINIZI_BURAYA_YAPIŞTIRIN';
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: Cesium.Terrain.fromWorldTerrain(),
@@ -51,7 +27,7 @@
       animation: false
     });
 
-    // GeoJSON
+    // GeoJSON parsel verisi
     const geojson = {
       "type": "FeatureCollection",
       "features": [{
@@ -64,23 +40,18 @@
         },
         "properties": {
           "ParselNo": "1",
-          "Alan": "14.572,03",
-          "Mevkii": "Nacaklı",
-          "Nitelik": "Arsa",
           "Ada": "196",
           "Il": "Aydın",
           "Ilce": "Kuşadası",
-          "Pafta": "M18-B-21-B-4-B",
           "Mahalle": "Soğucak"
         }
       }]
     };
 
-    // Yükle
     Cesium.GeoJsonDataSource.load(geojson, {
       clampToGround: false,
-      stroke: Cesium.Color.YELLOW,
-      fill: Cesium.Color.YELLOW.withAlpha(0.4),
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.5),
       strokeWidth: 2
     }).then(dataSource => {
       viewer.dataSources.add(dataSource);
@@ -89,26 +60,45 @@
       const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
       const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
+      // Parsel ortasına pin koy
+      viewer.entities.add({
+        position: center,
+        point: {
+          pixelSize: 12,
+          color: Cesium.Color.BLUE
+        },
+        label: {
+          text: Ada: ${entity.properties.Ada.getValue()}\nParsel: ${entity.properties.ParselNo.getValue()},
+          font: "14pt sans-serif",
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineWidth: 2,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -20)
+        }
+      });
+
       // Kamera başlat
       let heading = 0;
-      const pitch = Cesium.Math.toRadians(-90);  // Aşağı doğru bak
-      const range = 300;                         // Yükseklik mesafesi
+      const pitch = Cesium.Math.toRadians(-40); // Daha eğik bakış
+      const range = 250;                         // Mesafe
+      const totalRotation = Cesium.Math.TWO_PI; // 360 derece
+      const speed = 0.005;
 
-      function animateCamera(frame) {
-        heading += 0.005; // dönüş hızı
-        if (heading > Cesium.Math.TWO_PI) {
-          cancelAnimationFrame(frame);
+      viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+
+      function animateCamera() {
+        heading += speed;
+        if (heading >= totalRotation) {
+          viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range)); // Başlangıç pozisyonuna sabitle
           return;
         }
-
         viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
         requestAnimationFrame(animateCamera);
       }
 
-      viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
       setTimeout(() => {
-        requestAnimationFrame(animateCamera);
-      }, 1000); // 1 saniye bekleyip animasyona başla
+        animateCamera();
+      }, 1000); // 1 saniye sonra başla
     });
   </script>
 </body>
