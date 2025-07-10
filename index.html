@@ -2,18 +2,17 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>3B Parsel Dönüş – Stabil Kamera</title>
+  <title>Stabil 3B Parsel Dönüşü</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
-      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+      margin: 0; padding: 0; width: 100%; height: 100%;
     }
   </style>
 </head>
 <body>
   <div id="cesiumContainer"></div>
-
   <script>
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
@@ -31,8 +30,8 @@
         "geometry": {
           "type": "Polygon",
           "coordinates": [[[27.28348, 37.78565], [27.28237, 37.78602], [27.2822, 37.78603],
-                          [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
-                          [27.28348, 37.78565]]]
+                           [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
+                           [27.28348, 37.78565]]]
         },
         "properties": {
           "ParselNo": "1",
@@ -53,47 +52,46 @@
       stroke: Cesium.Color.YELLOW,
       fill: Cesium.Color.YELLOW.withAlpha(0.5),
       strokeWidth: 2
-    }).then(function (dataSource) {
+    }).then(function(dataSource) {
       viewer.dataSources.add(dataSource);
 
       viewer.flyTo(dataSource).then(() => {
         const entity = dataSource.entities.values[0];
         const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
 
+        // Parselin merkezini al
         const boundingSphere = Cesium.BoundingSphere.fromPoints(positions);
-        const cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
-        const lon = Cesium.Math.toDegrees(cartographic.longitude);
-        const lat = Cesium.Math.toDegrees(cartographic.latitude);
-        const height = 150; // Sabit yükseklik
+        const cartographicCenter = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+        const lon = Cesium.Math.toDegrees(cartographicCenter.longitude);
+        const lat = Cesium.Math.toDegrees(cartographicCenter.latitude);
+        const height = 50;
 
         const center = Cesium.Cartesian3.fromDegrees(lon, lat, height);
-        const radius = 300;
-        const pitch = Cesium.Math.toRadians(-45);
+        const transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+
+        viewer.camera.lookAtTransform(transform);
+
         let angle = 0;
+        const radius = 300;
+        const pitch = Cesium.Math.toRadians(-30);
 
-        function animateCamera() {
+        function rotateCamera() {
           angle += 0.002;
-          if (angle > Cesium.Math.TWO_PI) {
-            angle -= Cesium.Math.TWO_PI; // sonsuza gitmesin
-          }
+          if (angle > Cesium.Math.TWO_PI) angle -= Cesium.Math.TWO_PI;
 
-          const x = center.x + radius * Math.cos(angle);
-          const y = center.y + radius * Math.sin(angle);
-          const z = center.z;
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+          const z = 100;
 
-          viewer.camera.lookAt({
-            destination: new Cesium.Cartesian3(x, y, z),
-            orientation: {
-              heading: angle + Cesium.Math.PI_OVER_TWO,
-              pitch: pitch,
-              roll: 0
-            }
-          });
+          viewer.camera.lookAt(
+            new Cesium.Cartesian3(x, y, z),
+            new Cesium.HeadingPitchRange(angle + Cesium.Math.PI_OVER_TWO, pitch, radius)
+          );
 
-          requestAnimationFrame(animateCamera);
+          requestAnimationFrame(rotateCamera);
         }
 
-        animateCamera();
+        rotateCamera();
       });
     });
   </script>
