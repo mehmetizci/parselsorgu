@@ -2,55 +2,18 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Parsel Üzerinde Dönen Kamera (Dosya Yükleme + Sürükle Bırak)</title>
+  <title>Parsel Üzerinde Dönen Kamera (Video Kayıt)</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    #dropZone {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      color: white;
-      font-size: 32px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      pointer-events: none;
-    }
-
-    body.dragging #dropZone {
-      display: flex;
-      pointer-events: auto;
-    }
-
-    #fileInput {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1001;
-      background: white;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
     }
   </style>
 </head>
 <body>
-  <input type="file" id="fileInput" accept=".geojson">
   <div id="cesiumContainer"></div>
-  <div id="dropZone">📂 GeoJSON dosyasını buraya bırakın...</div>
-
   <script>
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
@@ -61,110 +24,127 @@
       animation: false
     });
 
-    function handleGeoJSONData(geojson) {
-      viewer.dataSources.removeAll();
-      viewer.entities.removeAll();
+    const geojson = {
+      "type": "FeatureCollection",
+      "features": [{
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[27.28348, 37.78565], [27.28237, 37.78602], [27.2822, 37.78603],
+                           [27.28157, 37.78534], [27.28219, 37.78493], [27.28277, 37.78461],
+                           [27.28348, 37.78565]]]
+        },
+        "properties": {
+          "ParselNo": "1",
+          "Ada": "196",
+          "Alan": "14.572,03"
+        }
+      }]
+    };
 
-      Cesium.GeoJsonDataSource.load(geojson, {
-        clampToGround: false,
-        stroke: Cesium.Color.RED,
-        fill: Cesium.Color.GREEN.withAlpha(0.3),
-        strokeWidth: 4
-      }).then(dataSource => {
-        viewer.dataSources.add(dataSource);
-        viewer.flyTo(dataSource);
+    Cesium.GeoJsonDataSource.load(geojson, {
+      clampToGround: false,
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.GREEN.withAlpha(0.3),
+      strokeWidth: 5
+    }).then(function (dataSource) {
+      viewer.dataSources.add(dataSource);
 
-        const entity = dataSource.entities.values[0];
-        const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-        const center = Cesium.BoundingSphere.fromPoints(positions).center;
+      const entity = dataSource.entities.values[0];
+      const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+      const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-        // 📍 Pin konumu
-        const cartographic = Cesium.Cartographic.fromCartesian(center);
-        const pinPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 50);
-
-        viewer.entities.add({
-          position: pinPosition,
-          billboard: {
-            image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            width: 72,
-            height: 72,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          }
-        });
-
-        // ✅ Alan değeri varsa ve virgül içeriyorsa düzelt
-        let alan = entity.properties?.Alan?.getValue() || "Bilinmiyor";
-        alan = ("" + alan).replace(",", ".");
-
-        viewer.entities.add({
-          position: pinPosition,
-          label: {
-            text: alan + " m²",
-            font: "30pt sans-serif",
-            fillColor: Cesium.Color.YELLOW,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 3,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -80),
-            showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
-          }
-        });
+      viewer.entities.add({
+        polyline: {
+          positions: positions,
+          width: 5,
+          material: Cesium.Color.YELLOW
+        }
       });
-    }
 
-    // 📥 Dosya Yükleme (Buton)
-    document.getElementById("fileInput").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (file && file.name.endsWith(".json")) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            const geojson = JSON.parse(event.target.result);
-            handleGeoJSONData(geojson);
-          } catch (err) {
-            alert("❌ Geçersiz GeoJSON dosyası.");
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        alert("Lütfen geçerli bir .geojson dosyası seçin.");
+      // Pin
+      const cartographic = Cesium.Cartographic.fromCartesian(center);
+      const pinPosition = Cesium.Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        50
+      );
+
+      viewer.entities.add({
+        position: pinPosition,
+        billboard: {
+          image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+          width: 72,
+          height: 72,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        }
+      });
+
+      // Etiket
+      viewer.entities.add({
+        position: pinPosition,
+        label: {
+          text: entity.properties.Alan.getValue() + " m²",
+          font: "38pt sans-serif",
+          fillColor: Cesium.Color.YELLOW,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 3,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -100),
+          showBackground: true,
+          backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
+        }
+      });
+
+      // Kamera dönüşü
+      let heading = 0;
+      const pitch = Cesium.Math.toRadians(-40);
+      const range = 800;
+      const speed = 0.005;
+
+      function rotateCamera() {
+        if (heading >= Cesium.Math.TWO_PI) return;
+        heading += speed;
+        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+        requestAnimationFrame(rotateCamera);
       }
-    });
 
-    // 🖱️ Sürükle Bırak
-    const dropZone = document.getElementById("dropZone");
+      viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
+      setTimeout(() => {
+        rotateCamera();
+      }, 1000);
 
-    document.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      document.body.classList.add("dragging");
-    });
+      // 🎥 Video Kaydı
+      const canvas = viewer.scene.canvas;
+      const stream = canvas.captureStream(30);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      const chunks = [];
 
-    document.addEventListener("dragleave", (e) => {
-      e.preventDefault();
-      document.body.classList.remove("dragging");
-    });
+      mediaRecorder.ondataavailable = function (e) {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
 
-    document.addEventListener("drop", (e) => {
-      e.preventDefault();
-      document.body.classList.remove("dragging");
+      mediaRecorder.onstop = function () {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "parsel_video.webm";
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+      };
 
-      const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".json")) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            const geojson = JSON.parse(event.target.result);
-            handleGeoJSONData(geojson);
-          } catch (err) {
-            alert("❌ Geçersiz GeoJSON dosyası.");
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        alert("Lütfen geçerli bir .geojson dosyası bırakın.");
-      }
+      setTimeout(() => {
+        mediaRecorder.start();
+        console.log("🎬 Kayıt başladı...");
+        setTimeout(() => {
+          mediaRecorder.stop();
+          console.log("✅ Kayıt tamamlandı, video indiriliyor...");
+        }, 30000);
+      }, 5000);
     });
   </script>
 </body>
