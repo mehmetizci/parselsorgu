@@ -9,71 +9,65 @@
     html, body, #cesiumContainer {
       width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
     }
-    #fileInput {
-      position: absolute;
-      top: 10px; left: 10px; z-index: 1000;
-      background: white; padding: 10px; border-radius: 6px;
-    }
   </style>
 </head>
 <body>
-  <div id="fileInput">
-    <input type="file" id="geojsonInput" accept=".geojson,.json">
-  </div>
   <div id="cesiumContainer"></div>
 
   <script>
-    // ✅ Sizin Token’ınız
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: Cesium.createWorldTerrain(),
       timeline: false,
       animation: false,
+      shouldAnimate: true
     });
 
-    let center = null;
-    let heading = 0;
+    const geojson = {
+      "type": "FeatureCollection",
+      "crs": { "type": "name", "properties": { "name": "EPSG:4326" } },
+      "features": [{
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[27.28754,37.78565],[27.28743,37.78575],[27.28722,37.78561],[27.28733,37.7855],[27.28754,37.78565]]]
+        },
+        "properties": {
+          "ParselNo": "1", "Alan": "367,31", "Mevkii": "Nacaklı", "Nitelik": "Arsa",
+          "Ada": "198", "Il": "Aydın", "Ilce": "Kuşadası", "Pafta": "M18-B-21-B-4-B", "Mahalle": "Soğucak"
+        }
+      }]
+    };
 
-    document.getElementById('geojsonInput').addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+    Cesium.GeoJsonDataSource.load(geojson, {
+      clampToGround: true
+    }).then(dataSource => {
+      viewer.dataSources.add(dataSource);
+      viewer.flyTo(dataSource);
 
-      reader.onload = function (event) {
-        const geojson = JSON.parse(event.target.result);
+      const entity = dataSource.entities.values[0];
+      const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
 
-        Cesium.GeoJsonDataSource.load(geojson, {
-          clampToGround: true
-        }).then(dataSource => {
-          viewer.dataSources.removeAll();
-          viewer.dataSources.add(dataSource);
-          viewer.flyTo(dataSource);
+      entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.6);
+      entity.polygon.outline = true;
+      entity.polygon.outlineColor = Cesium.Color.BLACK;
+      entity.polygon.extrudedHeight = 10;
 
-          const entity = dataSource.entities.values[0];
-          const hierarchy = entity?.polygon?.hierarchy?.getValue(Cesium.JulianDate.now());
-          const positions = hierarchy?.positions;
+      const bounds = Cesium.BoundingSphere.fromPoints(positions);
+      const center = bounds.center;
 
-          if (!positions || positions.length === 0) {
-            alert("GeoJSON içinde geçerli polygon verisi bulunamadı.");
-            return;
-          }
-
-          const bounds = Cesium.BoundingSphere.fromPoints(positions);
-          center = bounds.center;
-
-          // Polygon görünümü düzenle
-          entity.polygon.extrudedHeight = 10;
-          entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.5);
-          entity.polygon.outline = true;
-          entity.polygon.outlineColor = Cesium.Color.BLACK;
-
-          // Kamera animasyonu başlat
-          startOrbit();
-        });
-      };
-
-      reader.readAsText(file);
+      // Kamera turu
+      let heading = 0;
+      viewer.scene.postRender.addEventListener(() => {
+        heading += 0.2;
+        const radius = 100;
+        const pitch = Cesium.Math.toRadians(-20);
+        const headingRad = Cesium.Math.toRadians(heading);
+        const offset = new Cesium.HeadingPitchRange(headingRad, pitch, radius);
+        viewer.camera.lookAt(center, offset);
+      });
     });
-
-    function startOrbit() {
-      viewer.clock.shouldAnimate
+  </script>
+</body>
+</html>
