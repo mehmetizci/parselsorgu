@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>3B Parsel ve Kamera Turu</title>
+  <title>Parsel 3B Görselleştirme</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -15,18 +15,19 @@
   <div id="cesiumContainer"></div>
 
   <script>
+    // Cesium erişim token’ınız
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
       terrainProvider: Cesium.createWorldTerrain(),
+      shouldAnimate: true,
       timeline: false,
-      animation: false,
-      shouldAnimate: true
+      animation: false
     });
 
+    // GeoJSON verisi doğrudan burada tanımlı
     const geojson = {
       "type": "FeatureCollection",
-      "crs": { "type": "name", "properties": { "name": "EPSG:4326" } },
       "features": [{
         "type": "Feature",
         "geometry": {
@@ -34,8 +35,15 @@
           "coordinates": [[[27.28754,37.78565],[27.28743,37.78575],[27.28722,37.78561],[27.28733,37.7855],[27.28754,37.78565]]]
         },
         "properties": {
-          "ParselNo": "1", "Alan": "367,31", "Mevkii": "Nacaklı", "Nitelik": "Arsa",
-          "Ada": "198", "Il": "Aydın", "Ilce": "Kuşadası", "Pafta": "M18-B-21-B-4-B", "Mahalle": "Soğucak"
+          "ParselNo": "1",
+          "Alan": "367,31",
+          "Mevkii": "Nacaklı",
+          "Nitelik": "Arsa",
+          "Ada": "198",
+          "Il": "Aydın",
+          "Ilce": "Kuşadası",
+          "Pafta": "M18-B-21-B-4-B",
+          "Mahalle": "Soğucak"
         }
       }]
     };
@@ -47,27 +55,29 @@
       viewer.flyTo(dataSource);
 
       const entity = dataSource.entities.values[0];
-      const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+      const hierarchy = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now());
+      const positions = hierarchy.positions;
 
-      entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.6);
+      // Stil
+      entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.5);
       entity.polygon.outline = true;
       entity.polygon.outlineColor = Cesium.Color.BLACK;
       entity.polygon.extrudedHeight = 10;
 
-      const bounds = Cesium.BoundingSphere.fromPoints(positions);
-      const center = bounds.center;
+      // Kamera dönüş için merkez
+      const center = Cesium.BoundingSphere.fromPoints(positions).center;
 
-
-      // Kamera turu
       let heading = 0;
       viewer.scene.postRender.addEventListener(() => {
-        heading += 0.2;
-        const radius = 100;
-        const pitch = Cesium.Math.toRadians(-20);
+        heading += 0.3;
+        const radius = 60;
+        const pitch = Cesium.Math.toRadians(-30);
         const headingRad = Cesium.Math.toRadians(heading);
         const offset = new Cesium.HeadingPitchRange(headingRad, pitch, radius);
         viewer.camera.lookAt(center, offset);
       });
+    }).otherwise(error => {
+      console.error("GeoJSON yüklenemedi:", error);
     });
   </script>
 </body>
