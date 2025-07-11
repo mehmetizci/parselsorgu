@@ -149,14 +149,14 @@
         // Kamera hareketi: önce yakın, sonra yükselip dönecek
         let heading = 0;
         const pitch = Cesium.Math.toRadians(-40);
-        const startRange = 200;
+        const startRange = 100;
         const endRange = 800;
         const speed = 0.005;
 
         viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, startRange));
 
         function elevateCamera(step = 0) {
-          const totalSteps = 60;
+          const totalSteps = 100;
           const progress = step / totalSteps;
           const interpolatedRange = startRange + (endRange - startRange) * progress;
           viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, interpolatedRange));
