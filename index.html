@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <title>3B Parsel Görüntüleyici</title>
+  <meta charset="UTF-8">
+  <title>3B Parsel ve 360° Kamera</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
@@ -12,19 +12,17 @@
     #fileInput {
       position: absolute;
       top: 10px; left: 10px; z-index: 1000;
-      background: rgba(255,255,255,0.8);
-      padding: 10px; border-radius: 6px;
+      background: white; padding: 10px; border-radius: 8px;
     }
   </style>
 </head>
 <body>
   <div id="fileInput">
-    <input type="file" id="geojsonInput" accept=".geojson,.json">
+    <input type="file" id="geojsonInput" accept=".json,.geojson">
   </div>
   <div id="cesiumContainer"></div>
 
   <script>
-    // Cesium erişim anahtarın
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
@@ -33,36 +31,65 @@
       animation: false
     });
 
-    // GeoJSON dosyasını yükleme
+    let centerCartographic = null;
+
     document.getElementById('geojsonInput').addEventListener('change', function (e) {
       const file = e.target.files[0];
       const reader = new FileReader();
 
       reader.onload = function (event) {
         const geojsonData = JSON.parse(event.target.result);
-
-        const dataSourcePromise = Cesium.GeoJsonDataSource.load(geojsonData, {
+        Cesium.GeoJsonDataSource.load(geojsonData, {
           clampToGround: true
-        });
-
-        dataSourcePromise.then(dataSource => {
+        }).then(dataSource => {
+          viewer.dataSources.removeAll();
           viewer.dataSources.add(dataSource);
           viewer.flyTo(dataSource);
 
-          // 3B yüksekliği varsayalım (örnek 10 metre)
-          dataSource.entities.values.forEach(entity => {
-            if (entity.polygon) {
-              entity.polygon.extrudedHeight = 100.0;
-              entity.polygon.material = Cesium.Color.ORANGE.withAlpha(0.5);
-              entity.polygon.outline = true;
-              entity.polygon.outlineColor = Cesium.Color.BLACK;
-            }
-          });
+          // Merkez koordinatı hesapla
+          const entity = dataSource.entities.values[0];
+          let positions = entity.polygon?.hierarchy?.getValue(Cesium.JulianDate.now()).positions;
+          if (!positions || positions.length === 0) return;
+
+          // Merkez noktayı hesapla
+          centerCartographic = Cesium.BoundingSphere.fromPoints(positions).center;
+
+          // Polygon stil
+          entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.6);
+          entity.polygon.outline = true;
+          entity.polygon.outlineColor = Cesium.Color.BLACK;
+          entity.polygon.extrudedHeight = 10; // yükselti ver
+
+          startOrbitAnimation();
         });
       };
 
       reader.readAsText(file);
     });
+
+    function startOrbitAnimation() {
+      if (!centerCartographic) return;
+
+      let angle = 0;
+      viewer.clock.shouldAnimate = true;
+
+      viewer.scene.postRender.addEventListener(() => {
+        angle += 0.1; // daha hızlı ya da yavaş döndürmek için değiştir
+        const radius = 100; // kameranın parselden uzaklığı (metre)
+        const x = centerCartographic.x + radius * Math.cos(Cesium.Math.toRadians(angle));
+        const y = centerCartographic.y + radius * Math.sin(Cesium.Math.toRadians(angle));
+        const cameraPosition = new Cesium.Cartesian3(x, y, centerCartographic.z + 50);
+
+        viewer.camera.lookAt(
+          new Cesium.Cartesian3(x, y, centerCartographic.z + 50),
+          new Cesium.Cartesian3(
+            centerCartographic.x - x,
+            centerCartographic.y - y,
+            -50
+          )
+        );
+      });
+    }
   </script>
 </body>
 </html>
