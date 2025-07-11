@@ -110,7 +110,7 @@
       // Kamera dönüşü
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
-      const range = 800;
+      const range = 500;
       const speed = 0.005;
 
       function rotateCamera() {
@@ -126,7 +126,7 @@
 
     // 🌐 OpenStreetMap → Overpass API ile POI çek
     async function fetchPOIs(lon, lat) {
-      const radius = 500; // metre
+      const radius = 3000; // metre
       const query = `
         [out:json][timeout:25];
         (
