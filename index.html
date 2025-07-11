@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!DOCTYPE html><html lang="tr">
 <head>
   <meta charset="UTF-8">
   <title>Parsel Görüntüleme ve Video Kayıt</title>
@@ -7,40 +6,32 @@
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
+      margin: 0; padding: 0; width: 100%; height: 100%;
       font-family: sans-serif;
     }
-
+    #uploadContainer, #cesiumContainer {
+      display: none;
+      width: 100%; height: 100%;
+      align-items: center;
+      justify-content: center;
+    }
     #uploadContainer {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
       gap: 20px;
       background: #f0f0f0;
-      width: 100%;
-      height: 100%;
-      position: relative;
-      z-index: 10;
     }
-
-    #uploadContainer input,
+    #uploadContainer input {
+      font-size: 18px;
+    }
     #uploadContainer button {
-      font-size: 16px;
       padding: 10px 20px;
+      font-size: 16px;
     }
-
     #cesiumContainer {
-      display: none;
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       z-index: 0;
-      width: 100%;
-      height: 100%;
     }
   </style>
 </head>
@@ -51,144 +42,166 @@
     <button id="showMapBtn" disabled>Haritayı Göster</button>
   </div>
   <div id="cesiumContainer"></div>
-
   <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';const uploadContainer = document.getElementById('uploadContainer');
+const cesiumContainer = document.getElementById('cesiumContainer');
+const fileInput = document.getElementById('fileInput');
+const showMapBtn = document.getElementById('showMapBtn');
 
-    const uploadContainer = document.getElementById('uploadContainer');
-    const cesiumContainer = document.getElementById('cesiumContainer');
-    const fileInput = document.getElementById('fileInput');
-    const showMapBtn = document.getElementById('showMapBtn');
-    let geojsonData = null;
+let geojsonData = null;
 
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file && file.name.endsWith('.json')) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            geojsonData = JSON.parse(event.target.result);
-            showMapBtn.disabled = false;
-          } catch (err) {
-            alert("Geçersiz GeoJSON dosyası");
-            showMapBtn.disabled = true;
-          }
-        };
-        reader.readAsText(file);
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file && file.name.endsWith('.json')) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      try {
+        geojsonData = JSON.parse(event.target.result);
+        showMapBtn.disabled = false;
+      } catch (err) {
+        alert("Geçersiz GeoJSON dosyası");
+        showMapBtn.disabled = true;
+      }
+    };
+    reader.readAsText(file);
+  }
+});
+
+showMapBtn.addEventListener('click', () => {
+  uploadContainer.style.display = 'none';
+  cesiumContainer.style.display = 'block';
+  initializeCesium(geojsonData);
+});
+
+function initializeCesium(geojson) {
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    shouldAnimate: true,
+    timeline: false,
+    animation: false
+  });
+
+  Cesium.GeoJsonDataSource.load(geojson, {
+    clampToGround: false,
+    stroke: Cesium.Color.YELLOW,
+    fill: Cesium.Color.GREEN.withAlpha(0.3),
+    strokeWidth: 5
+  }).then(function (dataSource) {
+    viewer.dataSources.add(dataSource);
+
+    const entity = dataSource.entities.values[0];
+    const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+    const center = Cesium.BoundingSphere.fromPoints(positions).center;
+
+    viewer.entities.add({
+      polyline: {
+        positions: positions,
+        width: 5,
+        material: Cesium.Color.YELLOW
       }
     });
 
-    showMapBtn.addEventListener('click', () => {
-      uploadContainer.style.display = 'none';
-      cesiumContainer.style.display = 'block';
-      initializeCesium(geojsonData);
+    const cartographic = Cesium.Cartographic.fromCartesian(center);
+    const pinPosition = Cesium.Cartesian3.fromRadians(
+      cartographic.longitude,
+      cartographic.latitude,
+      50
+    );
+
+    viewer.entities.add({
+      position: pinPosition,
+      billboard: {
+        image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        width: 72,
+        height: 72,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+      }
     });
 
-    function initializeCesium(geojson) {
-      const viewer = new Cesium.Viewer('cesiumContainer', {
-        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-        shouldAnimate: true,
-        timeline: false,
-        animation: false
-      });
+    const alan = entity.properties?.Alan?.getValue?.() || "";
 
-      Cesium.GeoJsonDataSource.load(geojson, {
-        clampToGround: false,
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.GREEN.withAlpha(0.3),
-        strokeWidth: 5
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource);
+    viewer.entities.add({
+      position: pinPosition,
+      label: {
+        text: alan + " m²",
+        font: "38pt sans-serif",
+        fillColor: Cesium.Color.YELLOW,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 3,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -100),
+        showBackground: true,
+        backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
+      }
+    });
 
-        const entity = dataSource.entities.values[0];
-        const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-        const center = Cesium.BoundingSphere.fromPoints(positions).center;
+    let heading = 0;
+    const pitch = Cesium.Math.toRadians(-40);
+    const range = 800;
+    const speed = 0.005;
 
-        viewer.entities.add({
-          polyline: {
-            positions: positions,
-            width: 5,
-            material: Cesium.Color.YELLOW
-          }
-        });
-
-        const cartographic = Cesium.Cartographic.fromCartesian(center);
-        const pinPosition = Cesium.Cartesian3.fromRadians(
-          cartographic.longitude,
-          cartographic.latitude,
-          50
-        );
-
-        viewer.entities.add({
-          position: pinPosition,
-          billboard: {
-            image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            width: 72,
-            height: 72,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          }
-        });
-
-        const alan = entity.properties?.Alan?.getValue?.() || "";
-
-        viewer.entities.add({
-          position: pinPosition,
-          label: {
-            text: alan + " m²",
-            font: "38pt sans-serif",
-            fillColor: Cesium.Color.YELLOW,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 3,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -100),
-            showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
-          }
-        });
-
-        let heading = 0;
-        const pitch = Cesium.Math.toRadians(-40);
-        const range = 800;
-        const speed = 0.005;
-
-        function rotateCamera() {
-          if (heading >= Cesium.Math.TWO_PI) return;
-          heading += speed;
-          viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
-          requestAnimationFrame(rotateCamera);
-        }
-
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
-        setTimeout(() => rotateCamera(), 1000);
-
-        const canvas = viewer.scene.canvas;
-        const stream = canvas.captureStream(30);
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-        const chunks = [];
-
-        mediaRecorder.ondataavailable = function (e) {
-          if (e.data.size > 0) chunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = function () {
-          const blob = new Blob(chunks, { type: "video/webm" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.style.display = "none";
-          a.href = url;
-          a.download = "parsel_video.webm";
-          document.body.appendChild(a);
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-
-        setTimeout(() => {
-          mediaRecorder.start();
-          setTimeout(() => mediaRecorder.stop(), 30000);
-        }, 5000);
-      });
+    function rotateCamera() {
+      if (heading >= Cesium.Math.TWO_PI) return;
+      heading += speed;
+      viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
+      requestAnimationFrame(rotateCamera);
     }
+
+    viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, pitch, range));
+    setTimeout(() => rotateCamera(), 1000);
+
+    const canvas = viewer.scene.canvas;
+    const stream = canvas.captureStream(30);
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = function (e) {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = function () {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "parsel_video.webm";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    setTimeout(() => {
+      mediaRecorder.start();
+      setTimeout(() => mediaRecorder.stop(), 30000);
+    }, 5000);
+
+    // OpenStreetMap POI'leri (örnek, gerçek servis entegrasyonu için sunucu tarafı gerekir)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${Cesium.Math.toDegrees(cartographic.latitude)}&lon=${Cesium.Math.toDegrees(cartographic.longitude)}&zoom=18&addressdetails=1`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.display_name) {
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0),
+            label: {
+              text: data.display_name,
+              font: '14pt sans-serif',
+              fillColor: Cesium.Color.WHITE,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 2,
+              verticalOrigin: Cesium.VerticalOrigin.TOP,
+              pixelOffset: new Cesium.Cartesian2(0, -50),
+              showBackground: true,
+              backgroundColor: Cesium.Color.DARKBLUE.withAlpha(0.7)
+            }
+          });
+        }
+      });
+  });
+}
+
   </script>
 </body>
 </html>
