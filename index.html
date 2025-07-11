@@ -52,7 +52,7 @@
           // 3B yüksekliği varsayalım (örnek 10 metre)
           dataSource.entities.values.forEach(entity => {
             if (entity.polygon) {
-              entity.polygon.extrudedHeight = 299.0;
+              entity.polygon.extrudedHeight = 100.0;
               entity.polygon.material = Cesium.Color.ORANGE.withAlpha(0.5);
               entity.polygon.outline = true;
               entity.polygon.outlineColor = Cesium.Color.BLACK;
