@@ -151,7 +151,7 @@
       document.body.classList.remove("dragging");
 
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".geojson")) {
+      if (file && file.name.endsWith(".json")) {
         const reader = new FileReader();
         reader.onload = function (event) {
           try {
