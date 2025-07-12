@@ -197,6 +197,16 @@
       }
 
       animate();
+
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'tr-TR'; // Türkçe ses
+  msg.rate = 1;       // Konuşma hızı (1 normal)
+  speechSynthesis.speak(msg);
+}
+
+// Kullanım:
+speak("Şu anda parsel görüntüleniyor. Kameramız 500 metre yükseklikte dönüyor.");
     }
   </script>
 </body>
