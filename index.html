@@ -1,213 +1,84 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Parsel Görüntüleme ve Video Kayıt</title>
+  <meta charset="UTF-8" />
+  <title>Cesium + Overpass POI Katmanları</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
-    html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      font-family: sans-serif;
-    }
-    #uploadContainer, #cesiumContainer {
-      display: none;
-      width: 100%; height: 100%;
-      align-items: center;
-      justify-content: center;
-    }
-    #uploadContainer {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      background: #f0f0f0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    #uploadContainer input {
-      font-size: 18px;
-    }
-    #uploadContainer button {
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-    #cesiumContainer {
-      position: absolute;
-      top: 0; left: 0;
-      z-index: 0;
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
     }
   </style>
 </head>
 <body>
-  <div id="uploadContainer">
-    <h2>GeoJSON Dosyası Yükleyin</h2>
-    <input type="file" id="fileInput" accept=".json">
-    <button id="showMapBtn" disabled>Haritayı Göster</button>
-  </div>
   <div id="cesiumContainer"></div>
-  
   <script>
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
-    const uploadContainer = document.getElementById('uploadContainer');
-    const cesiumContainer = document.getElementById('cesiumContainer');
-    const fileInput = document.getElementById('fileInput');
-    const showMapBtn = document.getElementById('showMapBtn');
-
-    let geojsonData = null;
-
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file && file.name.endsWith('.json')) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            geojsonData = JSON.parse(event.target.result);
-            showMapBtn.disabled = false;
-          } catch (err) {
-            alert("Geçersiz GeoJSON dosyası");
-            showMapBtn.disabled = true;
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        alert("Lütfen .json uzantılı dosya seçin.");
-        showMapBtn.disabled = true;
-      }
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain(),
+      shouldAnimate: true
     });
 
-    showMapBtn.addEventListener('click', () => {
-      uploadContainer.style.display = 'none';
-      cesiumContainer.style.display = 'flex';
-      initializeCesium(geojsonData);
-    });
+    viewer.scene.globe.enableLighting = true;
 
-    function initializeCesium(geojson) {
-      const viewer = new Cesium.Viewer('cesiumContainer', {
-        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-        shouldAnimate: true,
-        timeline: false,
-        animation: false
-      });
+    const bbox = [27.0, 38.4, 27.1, 38.5]; // [minLon, minLat, maxLon, maxLat] Çiğli çevresi
 
-      Cesium.GeoJsonDataSource.load(geojson, {
-        clampToGround: false,
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.GREEN.withAlpha(0.3),
-        strokeWidth: 5
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource);
+    const overpassUrl = "https://overpass-api.de/api/interpreter";
 
-        const entity = dataSource.entities.values[0];
-        const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
-        const center = Cesium.BoundingSphere.fromPoints(positions).center;
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["amenity"="hospital"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
+        node["leisure"="park"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
+        node["shop"="supermarket"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
+      );
+      out body;
+    `;
 
-        viewer.entities.add({
-          polyline: {
-            positions: positions,
-            width: 5,
-            material: Cesium.Color.YELLOW
-          }
-        });
+    fetch(overpassUrl, {
+      method: "POST",
+      body: query
+    })
+    .then(response => response.json())
+    .then(data => {
+      data.elements.forEach((element) => {
+        const lon = element.lon;
+        const lat = element.lat;
+        const tags = element.tags || {};
+        const name = tags.name || "Bilinmeyen";
+        let type = "";
 
-        const cartographic = Cesium.Cartographic.fromCartesian(center);
-        const pinPosition = Cesium.Cartesian3.fromRadians(
-          cartographic.longitude,
-          cartographic.latitude,
-          50
-        );
+        if (tags.amenity === "hospital") type = "Hastane 🏥";
+        else if (tags.leisure === "park") type = "Park 🌳";
+        else if (tags.shop === "supermarket") type = "Market 🛒";
 
         viewer.entities.add({
-          position: pinPosition,
+          position: Cesium.Cartesian3.fromDegrees(lon, lat),
           billboard: {
-            image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            width: 72,
-            height: 72,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          }
-        });
-
-        const alan = entity.properties?.Alan?.getValue?.() || "";
-
-        viewer.entities.add({
-          position: pinPosition,
+            image: "https://cdn-icons-png.flaticon.com/512/684/684908.png", // Tek ikon örneği
+            width: 32,
+            height: 32
+          },
           label: {
-            text: alan + " m²",
-            font: "38pt sans-serif",
-            fillColor: Cesium.Color.YELLOW,
+            text: `${type}: ${name}`,
+            font: '14px sans-serif',
+            fillColor: Cesium.Color.WHITE,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            outlineWidth: 2,
             outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 3,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -100),
-            showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
+            verticalOrigin: Cesium.VerticalOrigin.TOP,
+            pixelOffset: new Cesium.Cartesian2(0, -40)
           }
         });
-
-        // Kamera başlangıcı: 500 metre yüksekte sabit, -40 derece eğimli
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 500));
-
-        // 5 saniye sonra sadece yatay döndürme animasyonu
-        setTimeout(() => {
-          rotateCamera(center, viewer);
-        }, 5000);
-
-        // Video kaydı
-        const canvas = viewer.scene.canvas;
-        const stream = canvas.captureStream(30);
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-        const chunks = [];
-
-        mediaRecorder.ondataavailable = function (e) {
-          if (e.data.size > 0) chunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = function () {
-          const blob = new Blob(chunks, { type: "video/webm" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.style.display = "none";
-          a.href = url;
-          a.download = "parsel_video.webm";
-          document.body.appendChild(a);
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-
-        setTimeout(() => {
-          mediaRecorder.start();
-          setTimeout(() => mediaRecorder.stop(), 30000);
-        }, 5000);
       });
-    }
 
-    function rotateCamera(center, viewer) {
-      let heading = 0;
-      const pitch = Cesium.Math.toRadians(-40);
-      const range = 300;
-      const speed = 0.015;
-
-      function animate() {
-        heading += speed;
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
-        if (heading < Cesium.Math.TWO_PI) {
-          requestAnimationFrame(animate);
-        }
-      }
-
-      animate();
-
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = 'tr-TR'; // Türkçe ses
-  msg.rate = 1;       // Konuşma hızı (1 normal)
-  speechSynthesis.speak(msg);
-}
-
-// Kullanım:
-speak("Şu anda parsel görüntüleniyor. Kameramız 500 metre yükseklikte dönüyor.");
-    }
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(27.05, 38.45, 3000)
+      });
+    })
+    .catch(err => console.error("Overpass API hatası:", err));
   </script>
 </body>
 </html>
