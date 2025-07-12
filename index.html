@@ -19,9 +19,11 @@
 
     // viewer oluştur
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.createWorldTerrain(),
-      shouldAnimate: true
-    });
+  terrainProvider: new Cesium.CesiumTerrainProvider({
+    url: Cesium.IonResource.fromAssetId(1)
+  }),
+  shouldAnimate: true
+});
 
     viewer.scene.globe.enableLighting = true;
 
