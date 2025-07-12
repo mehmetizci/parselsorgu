@@ -17,9 +17,9 @@
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.createWorldTerrain(),
-      shouldAnimate: true
-    });
+  terrainProvider: Cesium.CesiumTerrainProvider.fromWorldTerrain(),
+  shouldAnimate: true
+});
 
     viewer.scene.globe.enableLighting = true;
 
