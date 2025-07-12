@@ -2,88 +2,38 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Cesium + Overpass API</title>
+  <title>Cesium Terrain Test</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
     html, body, #cesiumContainer {
-      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
   <div id="cesiumContainer"></div>
   <script>
-    // Ion token
+    // Senin kişisel token'ın
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
-    // viewer oluştur
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-  terrainProvider: new Cesium.CesiumTerrainProvider({
-    url: Cesium.IonResource.fromAssetId(1)
-  }),
-  shouldAnimate: true
-});
+    async function initViewer() {
+      const terrainProvider = await Cesium.IonResource.fromAssetId(1)
+        .then(resource => new Cesium.CesiumTerrainProvider({ url: resource }));
 
-    viewer.scene.globe.enableLighting = true;
-
-    // Konum ve Overpass API ayarları
-    const bbox = [27.0, 38.4, 27.1, 38.5]; // Çiğli çevresi
-
-    const overpassUrl = "https://overpass-api.de/api/interpreter";
-
-    const query = `
-      [out:json][timeout:25];
-      (
-        node["amenity"="hospital"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
-        node["leisure"="park"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
-        node["shop"="supermarket"](${bbox[1]},${bbox[0]},${bbox[3]},${bbox[2]});
-      );
-      out body;
-    `;
-
-    fetch(overpassUrl, {
-      method: "POST",
-      body: query
-    })
-    .then(response => response.json())
-    .then(data => {
-      data.elements.forEach((element) => {
-        const lon = element.lon;
-        const lat = element.lat;
-        const tags = element.tags || {};
-        const name = tags.name || "Bilinmeyen";
-        let type = "";
-
-        if (tags.amenity === "hospital") type = "Hastane 🏥";
-        else if (tags.leisure === "park") type = "Park 🌳";
-        else if (tags.shop === "supermarket") type = "Market 🛒";
-
-        viewer.entities.add({
-          position: Cesium.Cartesian3.fromDegrees(lon, lat),
-          billboard: {
-            image: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-            width: 32,
-            height: 32
-          },
-          label: {
-            text: `${type}: ${name}`,
-            font: '14px sans-serif',
-            fillColor: Cesium.Color.WHITE,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            outlineWidth: 2,
-            outlineColor: Cesium.Color.BLACK,
-            verticalOrigin: Cesium.VerticalOrigin.TOP,
-            pixelOffset: new Cesium.Cartesian2(0, -40)
-          }
-        });
+      const viewer = new Cesium.Viewer('cesiumContainer', {
+        terrainProvider: terrainProvider,
+        shouldAnimate: true
       });
 
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(27.05, 38.45, 3000)
-      });
-    })
-    .catch(err => console.error("Overpass API hatası:", err));
+      viewer.scene.globe.enableLighting = true;
+    }
+
+    initViewer();
   </script>
 </body>
 </html>
