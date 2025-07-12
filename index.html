@@ -209,7 +209,7 @@
       const cartographic = Cesium.Cartographic.fromCartesian(center);
       const lon = Cesium.Math.toDegrees(cartographic.longitude);
       const lat = Cesium.Math.toDegrees(cartographic.latitude);
-      const delta = 0.01;
+      const delta = 0.03;
 
       const bbox = [lon - delta, lat - delta, lon + delta, lat + delta];
 
