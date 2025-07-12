@@ -145,15 +145,15 @@
           }
         });
 
-        // Kamera başlangıcı: 200 metre yüksekte ve pitch -80 derece (neredeyse yukarı bakıyor)
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-80), 200));
+        // Kamera başlangıcı: 500 metre yüksekte sabit, -40 derece eğimli
+        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 500));
 
-        // 5 saniye bekle sonra yükselme ve dönme animasyonunu başlat
+        // 5 saniye sonra sadece yatay döndürme animasyonu
         setTimeout(() => {
-          elevateAndRotateCamera(center, viewer);
+          rotateCamera(center, viewer);
         }, 5000);
 
-        // Video kaydı kısmı (istersen ekle veya çıkarabilirsin)
+        // Video kaydı
         const canvas = viewer.scene.canvas;
         const stream = canvas.captureStream(30);
         const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -182,22 +182,16 @@
       });
     }
 
-    function elevateAndRotateCamera(center, viewer) {
-      let range = 200; // başlangıç yüksekliği 200 metre
+    function rotateCamera(center, viewer) {
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
-      const maxRange = 500; // maksimum yükseklik
-      const speed = 0.008; // dönüş hızı
+      const range = 500;
+      const speed = 0.008;
 
       function animate() {
-        if (range < maxRange) {
-          range += 1; // yükselme hızı
-        }
-        if (heading < Cesium.Math.TWO_PI) {
-          heading += speed;
-        }
+        heading += speed;
         viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading, pitch, range));
-        if (heading < Cesium.Math.TWO_PI || range < maxRange) {
+        if (heading < Cesium.Math.TWO_PI) {
           requestAnimationFrame(animate);
         }
       }
