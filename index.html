@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Cesium + Overpass POI Katmanları</title>
+  <title>Cesium + Overpass API</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
@@ -14,16 +14,19 @@
 <body>
   <div id="cesiumContainer"></div>
   <script>
+    // Ion token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZDVhMzQ2Zi1mZTQ0LTQ0NTAtYjA3NS1hZGQ5ODUyZTQwZTQiLCJpZCI6MzIwMjM5LCJpYXQiOjE3NTIxMzg5ODR9.hvi8U7YsSQbZ3EQpP2NbQwEaerxL6ZRf0m7nk_tw3BY';
 
+    // viewer oluştur
     const viewer = new Cesium.Viewer('cesiumContainer', {
-  terrainProvider: Cesium.CesiumTerrainProvider.fromWorldTerrain(),
-  shouldAnimate: true
-});
+      terrainProvider: Cesium.createWorldTerrain(),
+      shouldAnimate: true
+    });
 
     viewer.scene.globe.enableLighting = true;
 
-    const bbox = [27.0, 38.4, 27.1, 38.5]; // [minLon, minLat, maxLon, maxLat] Çiğli çevresi
+    // Konum ve Overpass API ayarları
+    const bbox = [27.0, 38.4, 27.1, 38.5]; // Çiğli çevresi
 
     const overpassUrl = "https://overpass-api.de/api/interpreter";
 
@@ -57,7 +60,7 @@
         viewer.entities.add({
           position: Cesium.Cartesian3.fromDegrees(lon, lat),
           billboard: {
-            image: "https://cdn-icons-png.flaticon.com/512/684/684908.png", // Tek ikon örneği
+            image: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
             width: 32,
             height: 32
           },
