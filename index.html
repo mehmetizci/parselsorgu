@@ -114,7 +114,7 @@
         const pinPosition = Cesium.Cartesian3.fromRadians(
           cartographic.longitude,
           cartographic.latitude,
-          50
+          20
         );
 
         viewer.entities.add({
@@ -146,7 +146,7 @@
         });
 
         // Kamera başlangıcı: 500 metre yüksekte sabit, -40 derece eğimli
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 500));
+        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(Math.PI, Cesium.Math.toRadians(-40), 500));
 
         // 5 saniye sonra sadece yatay döndürme animasyonu
         setTimeout(() => {
