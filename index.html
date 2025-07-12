@@ -186,12 +186,12 @@
       let range = 200; // başlangıç yüksekliği 200 metre
       let heading = 0;
       const pitch = Cesium.Math.toRadians(-40);
-      const maxRange = 800; // maksimum yükseklik
-      const speed = 0.005; // dönüş hızı
+      const maxRange = 500; // maksimum yükseklik
+      const speed = 0.008; // dönüş hızı
 
       function animate() {
         if (range < maxRange) {
-          range += 2; // yükselme hızı
+          range += 1; // yükselme hızı
         }
         if (heading < Cesium.Math.TWO_PI) {
           heading += speed;
