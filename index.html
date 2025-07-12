@@ -151,7 +151,7 @@
           rotateCamera(center, viewer);
         }, 5000);
 
-        // Çevresel verileri yükle
+        // Çevredeki market, park, hastane verilerini çek ve göster
         loadPOIs(viewer, center);
 
         // Video kaydı
@@ -209,7 +209,7 @@
       const cartographic = Cesium.Cartographic.fromCartesian(center);
       const lon = Cesium.Math.toDegrees(cartographic.longitude);
       const lat = Cesium.Math.toDegrees(cartographic.latitude);
-      const delta = 0.03;
+      const delta = 0.02; // yaklaşık 2km yarıçap
 
       const bbox = [lon - delta, lat - delta, lon + delta, lat + delta];
 
@@ -223,12 +223,16 @@
         out body;
       `;
 
-      fetch("https://overpass-api.de/api/interpreter", {
+      fetch("https://overpass.kumi.systems/api/interpreter", {
         method: "POST",
         body: query
       })
       .then(res => res.json())
       .then(data => {
+        if (!data.elements.length) {
+          speak("Çevrede market, park veya hastane bulunamadı.");
+        }
+
         data.elements.forEach(e => {
           const tags = e.tags || {};
           const name = tags.name || "Bilinmeyen";
@@ -265,7 +269,17 @@
           });
         });
       })
-      .catch(err => console.error("POI çekme hatası:", err));
+      .catch(err => {
+        console.error("POI çekme hatası:", err);
+        speak("Çevre bilgisi alınırken bir hata oluştu.");
+      });
+    }
+
+    function speak(text) {
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = 'tr-TR';
+      msg.rate = 1;
+      speechSynthesis.speak(msg);
     }
   </script>
 </body>
