@@ -92,8 +92,8 @@
 
       Cesium.GeoJsonDataSource.load(geojson, {
         clampToGround: false,
-        stroke: Cesium.Color.RED,
-        fill: Cesium.Color.WHITE.withAlpha(0.3),
+        stroke: Cesium.Color.WHITE,
+        fill: Cesium.Color.RED.withAlpha(0.3),
         strokeWidth: 8
       }).then(function (dataSource) {
         viewer.dataSources.add(dataSource);
