@@ -117,34 +117,7 @@
           20
         );
 
-        viewer.entities.add({
-          position: pinPosition,
-          billboard: {
-            image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            width: 72,
-            height: 72,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          }
-        });
-
-        const alan = entity.properties?.Alan?.getValue?.() || "";
-
-        viewer.entities.add({
-          position: pinPosition,
-          label: {
-            text: "Bağ - Tarla",
-            font: "38pt sans-serif",
-            fillColor: Cesium.Color.YELLOW,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 3,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -100),
-            showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.7)
-          }
-        });
-
+        
         // Kamera başlangıcı: 500 metre yüksekte sabit, -40 derece eğimli
         viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(Math.PI, Cesium.Math.toRadians(-40), 500));
 
